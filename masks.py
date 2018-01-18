@@ -2,6 +2,7 @@
 
 from operator import itemgetter
 import string
+import sys
 
 
 
@@ -32,7 +33,7 @@ def printTopMasks(masks, top=10):
 
 if __name__ == '__main__':
     masks = dict()
-    with open("rockyou.txt") as fin:
+    with open(sys.argv[1]) as fin:
         for line in fin:
             line = line.strip()
 

@@ -12,9 +12,19 @@ import (
 
 func main() {
 
-	var count int64 = 1
 	input := os.Args[1]
+	wordchan = readFile(input)
 	masks := make(map[string]int)
+
+	sortedMasks := rankByCount(masks)
+	printTopMasks(sortedMasks, 10)
+
+	fmt.Printf("Processed %v words\n", count)
+}
+
+func readFile(infile string) <-chan []byte {
+	var count int64 = 1
+	out := make(chan []byte)
 	fileHandle, err := os.Open(input)
 	if err != nil {
 		log.Fatal(input, " file not found")
@@ -31,32 +41,34 @@ func main() {
 			log.Printf("Error processing %v", count)
 			log.Printf("Error %v", err)
 		}
-		mask := getMask(bytes)
-		masks[mask] += 1
+
+		out <- bytes
 		count += 1
 	}
-
-	sortedMasks := rankByCount(masks)
-	printTopMasks(sortedMasks, 10)
-
-	fmt.Printf("Processed %v words\n", count)
 }
 
-func getMask(text []byte) (mask string) {
-	for _, char := range text {
-		char := rune(char)
-		if unicode.IsDigit(char) {
-			mask += "d"
-		} else if unicode.IsUpper(char) {
-			mask += "u"
-		} else if unicode.IsLower(char) {
-			mask += "l"
-		} else {
-			mask += "s"
+func getMask(in <-chan []byte) <-chan string {
+	out := make(chan string)
+	go func() {
+		for text := range in {
+			var mask string = ""
+			for _, char := range text {
+				char := rune(char)
+				if unicode.IsDigit(char) {
+					mask += "d"
+				} else if unicode.IsUpper(char) {
+					mask += "u"
+				} else if unicode.IsLower(char) {
+					mask += "l"
+				} else {
+					mask += "s"
+				}
+			}
+			out <- mask
 		}
+		close(out)
 	}
-
-	return mask
+	return out
 }
 
 func printTopMasks(masks PairList, num int) {
